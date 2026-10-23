@@ -1,4 +1,4 @@
-const CACHE = 'emoja-shell-v3';
+const CACHE = 'emoja-shell-v4';
 const ROOT = new URL('./', self.location.href);
 self.addEventListener('install', event => {
   event.waitUntil((async () => {

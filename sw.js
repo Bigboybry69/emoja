@@ -1,4 +1,4 @@
-const CACHE = 'emoja-shell-v9';
+const CACHE = 'emoja-shell-v10';
 const ROOT = new URL('./', self.location.href);
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -6,9 +6,10 @@ self.addEventListener('install', event => {
     const response = await fetch(ROOT, {cache:'reload'});
     if (!response.ok) throw new Error('App shell unavailable');
     const html = await response.clone().text();
-    const assets = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)].map(match=>new URL(match[1], ROOT).href);
+    const assets = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css|png))"/g)].map(match=>new URL(match[1], ROOT).href);
+    for(const asset of [...assets])if(asset.endsWith('.js')){const script=await fetch(asset);if(script.ok){const code=await script.text();for(const match of code.matchAll(/(?:[\"'])([^\"']*assets\/harbor-parts-[^\"']+\.png)(?:[\"'])/g))assets.push(new URL(match[1],ROOT).href);}}
     await cache.put(ROOT,response);
-    await cache.addAll([...assets,'manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png'].map(path=>new URL(path,ROOT).href));
+    await cache.addAll([...new Set([...assets,'manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png'].map(path=>new URL(path,ROOT).href))]);
   })());
 });
 self.addEventListener('activate', event => {
@@ -21,6 +22,6 @@ self.addEventListener('fetch', event => {
       const response=await fetch(event.request);
       if(response.ok){const cache=await caches.open(CACHE);await cache.put(event.request,response.clone());}
       return response;
-    }catch(error){const cached=await caches.match(event.request);if(cached)return cached;if(event.request.mode==='navigate'){const shell=await caches.match(ROOT);if(shell)return shell;}throw error;}
+    }catch(error){const cached=await caches.match(event.request,{ignoreVary:true});if(cached)return cached;if(event.request.mode==='navigate'){const shell=await caches.match(ROOT,{ignoreVary:true});if(shell)return shell;}throw error;}
   })());
 });
